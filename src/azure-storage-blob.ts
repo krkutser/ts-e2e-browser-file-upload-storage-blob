@@ -65,12 +65,22 @@ const createBlobInContainer = async (file: File) => {
 // </snippet_createBlobInContainer>
 
 // <snippet_uploadFileToBlob>
-const uploadFileToBlob = async (file: File | null): Promise<void> => {
-  if (!file) return;
+import { BlockBlobParallelUploadOptions } from "@azure/storage-blob";
 
-  // upload file
-  await createBlobInContainer(file);
+const createBlobInContainer = async (file: File, options?: BlockBlobParallelUploadOptions) => {
+  const blobClient = containerClient.getBlockBlobClient(file.name);
+  const uploadOptions: BlockBlobParallelUploadOptions = {
+    blobHTTPHeaders: { blobContentType: file.type },
+    ...options,
+  };
+  await blobClient.uploadBrowserData(file, uploadOptions);
 };
-// </snippet_uploadFileToBlob>
+
+const uploadFileToBlob = async (file: File, options?: BlockBlobParallelUploadOptions) => {
+  if (!file) return;
+  await createBlobInContainer(file, options);
+};
 
 export default uploadFileToBlob;
+
+// </snippet_uploadFileToBlob>
