@@ -1,5 +1,4 @@
 // ./src/App.tsx
-
 import React, { useState, useEffect } from 'react';
 import uploadFileToBlob, { isStorageConfigured, getBlobsInContainer } from './azure-storage-blob';
 import DisplayImagesFromContainer from './ContainerImages';
@@ -14,26 +13,23 @@ interface UploadFile {
 }
 
 const App = (): JSX.Element => {
-  // all blobs in container
-  const [blobList, setBlobList] = useState<string[]>([]);
-
-  // files selected for upload
+  // All blobs in container
+  const [blobList, setBlobList] = useState<{ url: string; name: string }[]>([]);
+  
+  // Files selected for upload
   const [filesToUpload, setFilesToUpload] = useState<UploadFile[]>([]);
-  const [fileUploaded, setFileUploaded] = useState<string>('');
-
-  // UI/form management
+  
+  // UI / form management
   const [uploading, setUploading] = useState<boolean>(false);
   const [inputKey, setInputKey] = useState(Math.random().toString(36));
 
-  // *** GET FILES IN CONTAINER ***
+  // Fetch existing blobs from container
   useEffect(() => {
-    getBlobsInContainer().then((list: any) => {
-      setBlobList(list);
-    });
-  }, [fileUploaded]);
+    getBlobsInContainer().then((list) => setBlobList(list));
+  }, [filesToUpload]);
 
-  // handle file selection
-  const onFileChange = (event: any) => {
+  // Handle file selection
+  const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = event.target.files;
     if (!fileList) return;
 
@@ -47,13 +43,13 @@ const App = (): JSX.Element => {
     setFilesToUpload(filesArray);
   };
 
-  // handle file upload
+  // Handle upload
   const onFileUpload = async () => {
     if (!filesToUpload || filesToUpload.length === 0) return;
 
     setUploading(true);
 
-    // Helper to update state per file
+    // Update progress per file
     const updateFileProgress = (fileName: string, progress: number, speed: number, eta: number) => {
       setFilesToUpload(prev =>
         prev.map(f =>
@@ -68,14 +64,13 @@ const App = (): JSX.Element => {
         const startTime = Date.now();
         let lastLoaded = 0;
 
-        // @ts-ignore
         await uploadFileToBlob(f.file, {
           onProgress: (ev: { loadedBytes: number }) => {
             const now = Date.now();
             const elapsedSec = (now - startTime) / 1000;
 
             const loaded = ev.loadedBytes;
-            const speed = (loaded - lastLoaded) / elapsedSec; // bytes/sec
+            const speed = elapsedSec > 0 ? (loaded - lastLoaded) / elapsedSec : 0; // bytes/sec
             const eta = speed > 0 ? (f.file.size - loaded) / speed : 0;
             const progress = Math.round((loaded / f.file.size) * 100);
 
@@ -88,16 +83,15 @@ const App = (): JSX.Element => {
     );
 
     setUploading(false);
-    setFileUploaded(`Uploaded ${filesToUpload.length} file(s)`);
-    setFilesToUpload([]);
     setInputKey(Math.random().toString(36));
+    setFilesToUpload([]);
   };
 
-  // display form
+  // Display form and upload progress
   const DisplayForm = () => (
     <div>
-      <input type="file" multiple onChange={onFileChange} key={inputKey || ''} />
-      <button type="submit" onClick={onFileUpload} disabled={filesToUpload.length === 0}>
+      <input type="file" multiple onChange={onFileChange} key={inputKey} />
+      <button type="button" onClick={onFileUpload} disabled={uploading || filesToUpload.length === 0}>
         Upload!
       </button>
 
@@ -128,13 +122,9 @@ const App = (): JSX.Element => {
   return (
     <div>
       <h1>Upload file to Azure Blob Storage</h1>
-      {storageConfigured && !uploading && DisplayForm()}
-      {storageConfigured && uploading && <div>Uploading...</div>}
+      {storageConfigured ? DisplayForm() : <div>Storage is not configured.</div>}
       <hr />
-      {storageConfigured && blobList.length > 0 && (
-        <DisplayImagesFromContainer blobList={blobList} />
-      )}
-      {!storageConfigured && <div>Storage is not configured.</div>}
+      {storageConfigured && blobList.length > 0 && <DisplayImagesFromContainer blobList={blobList} />}
     </div>
   );
 };
