@@ -19,7 +19,7 @@ const App = (): JSX.Element => {
   // Files selected for upload
   const [filesToUpload, setFilesToUpload] = useState<UploadFile[]>([]);
   
-  // UI / form management
+  // UI management
   const [uploading, setUploading] = useState<boolean>(false);
   const [inputKey, setInputKey] = useState(Math.random().toString(36));
 
