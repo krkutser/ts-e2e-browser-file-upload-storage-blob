@@ -1,50 +1,48 @@
 // ./src/azure-storage-blob.ts
 
-// THIS IS SAMPLE CODE ONLY - NOT MEANT FOR PRODUCTION USE
 import { BlobServiceClient, ContainerClient, BlockBlobParallelUploadOptions } from "@azure/storage-blob";
 
-// ----------------------
-// CONFIGURATION
-// ----------------------
-const containerName = `files`; // make sure this matches your Azure container
+// ==========================
+// Configuration
+// ==========================
+const containerName = `files`;
 const sasToken = process.env.REACT_APP_AZURE_STORAGE_SAS_TOKEN;
 const storageAccountName = process.env.REACT_APP_AZURE_STORAGE_RESOURCE_NAME;
 
-// build upload URL
+// Build the full Blob Service URL
 const uploadUrl = `https://${storageAccountName}.blob.core.windows.net/?${sasToken}`;
 console.log("Azure Blob Storage URL:", uploadUrl);
 
-// get BlobServiceClient
+// Initialize Blob Service Client
 const blobService = new BlobServiceClient(uploadUrl);
 
-// get ContainerClient
+// Get the container client
 const containerClient: ContainerClient = blobService.getContainerClient(containerName);
 
-// ----------------------
-// HELPER FUNCTIONS
-// ----------------------
+// ==========================
+// Utility: Check Storage Configuration
+// ==========================
+export const isStorageConfigured = (): boolean => !!storageAccountName && !!sasToken;
 
-// Check if storage is configured
-export const isStorageConfigured = (): boolean => {
-  return !!storageAccountName && !!sasToken;
-};
-
-// Get list of blobs in container
+// ==========================
+// Get all blobs in container
+// ==========================
 export const getBlobsInContainer = async () => {
   const returnedBlobUrls: { url: string; name: string }[] = [];
 
   for await (const blob of containerClient.listBlobsFlat()) {
-    const blobItem = {
+    returnedBlobUrls.push({
       url: `https://${storageAccountName}.blob.core.windows.net/${containerName}/${blob.name}?${sasToken}`,
       name: blob.name,
-    };
-    returnedBlobUrls.push(blobItem);
+    });
   }
 
   return returnedBlobUrls;
 };
 
-// Upload a single file to container with optional progress reporting
+// ==========================
+// Upload a single file with optional progress callback
+// ==========================
 const createBlobInContainer = async (
   file: File,
   options?: BlockBlobParallelUploadOptions
@@ -59,7 +57,9 @@ const createBlobInContainer = async (
   await blobClient.uploadBrowserData(file, uploadOptions);
 };
 
-// Main export: upload a file
+// ==========================
+// Main export: Upload file
+// ==========================
 const uploadFileToBlob = async (
   file: File,
   options?: BlockBlobParallelUploadOptions
