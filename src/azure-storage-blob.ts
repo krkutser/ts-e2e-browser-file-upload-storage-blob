@@ -3,7 +3,7 @@
 import { BlobServiceClient, ContainerClient, BlockBlobParallelUploadOptions } from "@azure/storage-blob";
 
 // ==========================
-// Configuration
+// Configurations
 // ==========================
 const containerName = `files`;
 const sasToken = process.env.REACT_APP_AZURE_STORAGE_SAS_TOKEN;
