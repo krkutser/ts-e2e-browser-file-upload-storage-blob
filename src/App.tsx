@@ -10,7 +10,7 @@ const App = (): JSX.Element => {
   const [blobList, setBlobList] = useState<string[]>([]);
 
   // current file to upload into container
-  const [fileSelected, setFileSelected] = useState<File | null>();
+  const [filesSelected, setFilesSelected] = useState<FileList | null>(null);
   const [fileUploaded, setFileUploaded] = useState<string>('');
 
   // UI/form management
@@ -27,32 +27,30 @@ const App = (): JSX.Element => {
 
   const onFileChange = (event: any) => {
     // capture file into state
-    setFileSelected(event.target.files[0]);
+    setFileSelected(event.target.files);
   };
 
   const onFileUpload = async () => {
 
-    if(fileSelected && fileSelected?.name){
-    // prepare UI
-    setUploading(true);
+if (filesSelected && filesSelected.length > 0) {
+  setUploading(true);
 
-    // *** UPLOAD TO AZURE STORAGE ***
-    await uploadFileToBlob(fileSelected);
+  // Convert FileList to array and upload all files in parallel
+  await Promise.all(Array.from(filesSelected).map(file => uploadFileToBlob(file)));
 
-    // reset state/form
-    setFileSelected(null);
-    setFileUploaded(fileSelected.name);
-    setUploading(false);
-    setInputKey(Math.random().toString(36));
-
-    }
+  // Reset state/form
+  setFilesSelected(null);
+  setFileUploaded(`Uploaded ${filesSelected.length} file(s)`);
+  setUploading(false);
+  setInputKey(Math.random().toString(36));
+}
 
   };
 
   // display form
   const DisplayForm = () => (
     <div>
-      <input type="file" onChange={onFileChange} key={inputKey || ''} />
+      <input type="file" multiple onChange={onFileChange} key={inputKey || ''} />
       <button type="submit" onClick={onFileUpload}>
         Upload!
           </button>
@@ -72,5 +70,6 @@ const App = (): JSX.Element => {
 };
 
 export default App;
+
 
 
