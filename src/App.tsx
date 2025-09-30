@@ -43,7 +43,7 @@ const App = (): JSX.Element => {
     setFilesToUpload(filesArray);
   };
 
-  // Handle upload
+  // Handle uploads
   const onFileUpload = async () => {
     if (!filesToUpload || filesToUpload.length === 0) return;
 
