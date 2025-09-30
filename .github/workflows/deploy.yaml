@@ -1,4 +1,4 @@
-name: Azure Static Web Apps CI/CD
+name: Manual Deploy Azure Web Apps
 
 # Manual workflow dispatch
 on:
