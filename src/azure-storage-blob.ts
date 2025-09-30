@@ -1,86 +1,71 @@
 // ./src/azure-storage-blob.ts
 
-// <snippet_package>
 // THIS IS SAMPLE CODE ONLY - NOT MEANT FOR PRODUCTION USE
-import { BlobServiceClient, ContainerClient } from "@azure/storage-blob";
+import { BlobServiceClient, ContainerClient, BlockBlobParallelUploadOptions } from "@azure/storage-blob";
 
-const containerName = `files`;
+// ----------------------
+// CONFIGURATION
+// ----------------------
+const containerName = `files`; // make sure this matches your Azure container
 const sasToken = process.env.REACT_APP_AZURE_STORAGE_SAS_TOKEN;
 const storageAccountName = process.env.REACT_APP_AZURE_STORAGE_RESOURCE_NAME;
-// </snippet_package>
 
-// <snippet_get_client>
+// build upload URL
 const uploadUrl = `https://${storageAccountName}.blob.core.windows.net/?${sasToken}`;
-console.log(uploadUrl);
+console.log("Azure Blob Storage URL:", uploadUrl);
 
-// get BlobService = notice `?` is pulled out of sasToken - if created in Azure portal
+// get BlobServiceClient
 const blobService = new BlobServiceClient(uploadUrl);
 
-// get Container - full public read access
-const containerClient: ContainerClient =
-  blobService.getContainerClient(containerName);
-// </snippet_get_client>
+// get ContainerClient
+const containerClient: ContainerClient = blobService.getContainerClient(containerName);
 
-// <snippet_isStorageConfigured>
-// Feature flag - disable storage feature to app if not configured
-export const isStorageConfigured = () => {
-  return !storageAccountName || !sasToken ? false : true;
+// ----------------------
+// HELPER FUNCTIONS
+// ----------------------
+
+// Check if storage is configured
+export const isStorageConfigured = (): boolean => {
+  return !!storageAccountName && !!sasToken;
 };
-// </snippet_isStorageConfigured>
 
-// <snippet_getBlobsInContainer>
-// return list of blobs in container to display
+// Get list of blobs in container
 export const getBlobsInContainer = async () => {
-  const returnedBlobUrls = [];
+  const returnedBlobUrls: { url: string; name: string }[] = [];
 
-  // get list of blobs in container
-  // eslint-disable-next-line
   for await (const blob of containerClient.listBlobsFlat()) {
-    console.log(`${blob.name}`);
-
     const blobItem = {
       url: `https://${storageAccountName}.blob.core.windows.net/${containerName}/${blob.name}?${sasToken}`,
-      name: blob.name
-    }
-
-    // if image is public, just construct URL
+      name: blob.name,
+    };
     returnedBlobUrls.push(blobItem);
   }
 
   return returnedBlobUrls;
 };
-// </snippet_getBlobsInContainer>
 
-// <snippet_createBlobInContainer>
-const createBlobInContainer = async (file: File) => {
-  // create blobClient for container
+// Upload a single file to container with optional progress reporting
+const createBlobInContainer = async (
+  file: File,
+  options?: BlockBlobParallelUploadOptions
+) => {
   const blobClient = containerClient.getBlockBlobClient(file.name);
 
-  // set mimetype as determined from browser with file upload control
-  const options = { blobHTTPHeaders: { blobContentType: file.type } };
-
-  // upload file
-  await blobClient.uploadData(file, options);
-};
-// </snippet_createBlobInContainer>
-
-// <snippet_uploadFileToBlob>
-import { BlockBlobParallelUploadOptions } from "@azure/storage-blob";
-
-const createBlobInContainer = async (file: File, options?: BlockBlobParallelUploadOptions) => {
-  const blobClient = containerClient.getBlockBlobClient(file.name);
   const uploadOptions: BlockBlobParallelUploadOptions = {
     blobHTTPHeaders: { blobContentType: file.type },
     ...options,
   };
+
   await blobClient.uploadBrowserData(file, uploadOptions);
 };
 
-const uploadFileToBlob = async (file: File, options?: BlockBlobParallelUploadOptions) => {
+// Main export: upload a file
+const uploadFileToBlob = async (
+  file: File,
+  options?: BlockBlobParallelUploadOptions
+) => {
   if (!file) return;
   await createBlobInContainer(file, options);
 };
 
 export default uploadFileToBlob;
-
-// </snippet_uploadFileToBlob>
