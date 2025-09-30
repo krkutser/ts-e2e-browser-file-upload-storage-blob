@@ -98,11 +98,29 @@ const App = (): JSX.Element => {
   // display form
   const DisplayForm = () => (
     <div>
-      <input type="file" multiple onChange={onFileChange} key={inputKey || ''} />
-      <button type="submit" onClick={onFileUpload}>
-        Upload!
-          </button>
+  {filesToUpload.map(f => (
+    <div key={f.file.name} style={{ marginBottom: 10 }}>
+      <strong>{f.file.name}</strong> - {f.progress}%
+      <div style={{ background: "#eee", height: 10, width: 300 }}>
+        <div
+          style={{
+            width: `${f.progress}%`,
+            background: "green",
+            height: "100%",
+          }}
+        />
+      </div>
+      <div>
+        {f.speed > 0 && (
+          <>
+            Speed: {(f.speed / 1024 / 1024).toFixed(2)} MB/s | ETA: {Math.round(f.eta)} sec
+          </>
+        )}
+      </div>
     </div>
+  ))}
+</div>
+
   )
 
   return (
@@ -118,6 +136,7 @@ const App = (): JSX.Element => {
 };
 
 export default App;
+
 
 
 
